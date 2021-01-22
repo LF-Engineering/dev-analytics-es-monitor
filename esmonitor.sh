@@ -24,23 +24,32 @@ then
   echo "$0: you need to specify ES_URL env variable"
   exit 3
 fi
-cd "$MONITOR_DIR" || exit 4
-git pull || exit 5
-make || exit 6
+if [ -z "${RECIPIENTS}" ]
+then
+  export RECIPIENTS="`cat ./RECIPIENTS.${1}.secret`"
+fi
+if [ -z "${RECIPIENTS}" ]
+then
+  echo "$0: you need to specify RECIPIENTS env variable"
+  exit 4
+fi
+cd "$MONITOR_DIR" || exit 5
+git pull || exit 6
+make || exit 7
 repo="`cat repo_access.secret`"
 if [ -z "$repo" ]
 then
   echo "$0: missing repo_access.secret file"
-  exit 7
+  exit 8
 fi
 rm -rf dev-analytics-api
-git clone "${repo}" || exit 8
-cd dev-analytics-api || exit 9
-git checkout "$1" || exit 10
-cd .. || exit 11
+git clone "${repo}" || exit 9
+cd dev-analytics-api || exit 10
+git checkout "$1" || exit 11
+cd .. || exit 12
 function cleanup {
   rm -rf "${lock_file}" dev-analytics-api
 }
 > "${lock_file}"
 trap cleanup EXIT
-./esmonitor ./dev-analytics-api/app/services/lf/bootstrap/fixtures 2>&1 | tee -a run.log
+BRANCH="$1" ./esmonitor ./dev-analytics-api/app/services/lf/bootstrap/fixtures 2>&1 | tee -a run.log

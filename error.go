@@ -13,6 +13,7 @@ func fatalOnError(err error) {
 		msg := fmt.Sprintf("Error(time=%+v):\nError: '%s'\nStacktrace:\n%s\n", tm, err.Error(), string(debug.Stack()))
 		fmt.Printf("%s", msg)
 		fmt.Fprintf(os.Stderr, "%s", msg)
+		_ = sendStatusEmail(msg)
 		panic("stacktrace")
 	}
 }

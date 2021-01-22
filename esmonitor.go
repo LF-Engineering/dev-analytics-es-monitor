@@ -16,6 +16,8 @@ import (
 
 var (
 	gESURL        string
+	gBranch       string
+	gRecipients   string
 	noDropPattern = regexp.MustCompile(`^(.+-f-.+|.+-earned_media|.+-slack)$`)
 )
 
@@ -295,7 +297,7 @@ func processFixtureFile(ch chan fixture, fixtureFile string) (fx fixture) {
 	return
 }
 
-func processFixtureFiles(fixtureFiles []string) {
+func processFixtureFiles(fixtureFiles []string) string {
 	thrN := runtime.NumCPU()
 	runtime.GOMAXPROCS(thrN)
 	ch := make(chan fixture)
@@ -336,10 +338,25 @@ func processFixtureFiles(fixtureFiles []string) {
 		st[slug] = fixture
 	}
 	idxInfo := processIndexesInfo(fixtures)
-	fmt.Printf("%s\n", idxInfo)
 	aliasInfo := dropUnusedAliasesInfo(fixtures)
-	fmt.Printf("%s\n", aliasInfo)
-	//processAliases(fixtures)
+	finalInfo := ""
+	if idxInfo != "" {
+		finalInfo = "Indices status (" + gBranch + " environment):\n==================================\n" + idxInfo
+		finalInfo += "==================================\n"
+	}
+	if aliasInfo != "" {
+		if finalInfo != "" {
+			finalInfo += "\n\n"
+		}
+		finalInfo += "Aliases status (" + gBranch + " environment):\n==================================\n" + aliasInfo
+		finalInfo += "==================================\n"
+	}
+	return finalInfo
+}
+
+func sendStatusEmail(body string) error {
+	fmt.Printf("sending email to %s\n", gRecipients)
+	return nil
 }
 
 func main() {
@@ -350,6 +367,18 @@ func main() {
 	if gESURL == "" {
 		fatalf("%s: you must set ES_URL env variable\n", os.Args[0])
 	}
+	gBranch = os.Getenv("BRANCH")
+	if gBranch == "" {
+		fatalf("%s: you must set BRANCH env variable\n", os.Args[0])
+	}
+	gRecipients = os.Getenv("RECIPIENTS")
+	if gRecipients == "" {
+		fatalf("%s: you must set RECIPIENTS env variable\n", os.Args[0])
+	}
 	fixtures := getFixtures(os.Args[1])
-	processFixtureFiles(fixtures)
+	info := processFixtureFiles(fixtures)
+	if info != "" {
+		fmt.Printf("%s\n", info)
+		fatalOnError(sendStatusEmail(info))
+	}
 }
