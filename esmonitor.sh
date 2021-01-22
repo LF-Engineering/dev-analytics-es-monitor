@@ -15,20 +15,29 @@ if [ -z "$MONITOR_DIR" ]
 then
   MONITOR_DIR=/root/go/src/github.com/LF-Engineering/dev-analytics-es-monitor
 fi
-cd "$MONITOR_DIR" || exit 3
-git pull || exit 4
-make || exit 5
+if [ -z "${ES_URL}" ]
+then
+  export ES_URL="`cat ./ES_URL.${1}.secret`"
+fi
+if [ -z "${ES_URL}" ]
+then
+  echo "$0: you need to specify ES_URL env variable"
+  exit 3
+fi
+cd "$MONITOR_DIR" || exit 4
+git pull || exit 5
+make || exit 6
 repo="`cat repo_access.secret`"
 if [ -z "$repo" ]
 then
   echo "$0: missing repo_access.secret file"
-  exit 6
+  exit 7
 fi
 rm -rf dev-analytics-api
-git clone "${repo}" || exit 7
-cd dev-analytics-api || exit 8
-git checkout "$1" || exit 9
-cd .. || exit 10
+git clone "${repo}" || exit 8
+cd dev-analytics-api || exit 9
+git checkout "$1" || exit 10
+cd .. || exit 11
 function cleanup {
   rm -rf "${lock_file}" dev-analytics-api
 }
