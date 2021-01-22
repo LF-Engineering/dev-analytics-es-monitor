@@ -23,7 +23,12 @@ type esIndex struct {
 	Index string `json:"index"`
 }
 
-func processIndexes(fixtures []fixture) (info string) {
+type esAlias struct {
+	Alias string `json:"alias"`
+	Index string `json:"index"`
+}
+
+func processIndexesInfo(fixtures []fixture) (info string) {
 	should := make(map[string]struct{})
 	fromFull := make(map[string]string)
 	toFull := make(map[string]string)
@@ -121,9 +126,6 @@ func processIndexes(fixtures []fixture) (info string) {
 			}
 		}
 	}
-	if len(renames) > 0 {
-		info += fmt.Sprintf("%d indices should be renamed: %s\n\n", len(renames), strings.Join(renames, ", "))
-	}
 	sort.Strings(missing)
 	sort.Strings(extra)
 	if len(missing) > 0 {
@@ -138,7 +140,103 @@ func processIndexes(fixtures []fixture) (info string) {
 	}
 	extra = newExtra
 	if len(extra) > 0 {
+		if info != "" {
+			info += "\n"
+		}
 		info += fmt.Sprintf("following %d indices should be removed: %s\n", len(extra), strings.Join(extra, ", "))
+	}
+	if len(renames) > 0 {
+		if info != "" {
+			info += "\n"
+		}
+		info += fmt.Sprintf("%d indices should be renamed: %s\n\n", len(renames), strings.Join(renames, ", "))
+	}
+	return
+}
+
+func dropUnusedAliasesInfo(fixtures []fixture) (info string) {
+	should := make(map[string]struct{})
+	for _, fixture := range fixtures {
+		for _, alias := range fixture.Aliases {
+			for _, to := range alias.To {
+				should[strings.Replace(to, "/", "-", -1)] = struct{}{}
+			}
+			for _, view := range alias.Views {
+				should[strings.Replace(view.Name, "/", "-", -1)] = struct{}{}
+			}
+		}
+	}
+	method := "GET"
+	url := fmt.Sprintf("%s/_cat/aliases?format=json", gESURL)
+	rurl := "/_cat/aliases?format=json"
+	req, err := http.NewRequest(method, os.ExpandEnv(url), nil)
+	if err != nil {
+		fatalf("new request error: %+v for %s url: %s\n", err, method, rurl)
+		return
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		fatalf("do request error: %+v for %s url: %s\n", err, method, rurl)
+		return
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+	if resp.StatusCode != 200 {
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			fatalf("readAll request error: %+v for %s url: %s\n", err, method, rurl)
+			return
+		}
+		fatalf("nethod:%s url:%s status:%d\n%s\n", method, rurl, resp.StatusCode, body)
+		return
+	}
+	aliases := []esAlias{}
+	err = jsoniter.NewDecoder(resp.Body).Decode(&aliases)
+	if err != nil {
+		fatalf("JSON decode error: %+v for %s url: %s\n", err, method, rurl)
+		return
+	}
+	got := make(map[string]struct{})
+	for _, alias := range aliases {
+		sAlias := alias.Alias
+		if !strings.HasPrefix(sAlias, "sds-") {
+			continue
+		}
+		got[sAlias] = struct{}{}
+	}
+	missing := []string{}
+	extra := []string{}
+	for alias := range should {
+		_, ok := got[alias]
+		if !ok {
+			missing = append(missing, alias)
+		}
+	}
+	for alias := range got {
+		_, ok := should[alias]
+		if !ok {
+			extra = append(extra, alias)
+		}
+	}
+	sort.Strings(missing)
+	sort.Strings(extra)
+	if len(missing) > 0 {
+		info += fmt.Sprintf("missing %d aliases: %s\n", len(missing), strings.Join(missing, ", "))
+	}
+	newExtra := []string{}
+	for _, idx := range extra {
+		if noDropPattern.MatchString(idx) {
+			continue
+		}
+		newExtra = append(newExtra, idx)
+	}
+	extra = newExtra
+	if len(extra) > 0 {
+		if info != "" {
+			info += "\n"
+		}
+		info += fmt.Sprintf("%d aliases to delete: %s\n", len(extra), strings.Join(extra, ", "))
 	}
 	return
 }
@@ -237,9 +335,10 @@ func processFixtureFiles(fixtureFiles []string) {
 		}
 		st[slug] = fixture
 	}
-	idxInfo := processIndexes(fixtures)
+	idxInfo := processIndexesInfo(fixtures)
 	fmt.Printf("%s\n", idxInfo)
-	//dropUnusedAliases(fixtures)
+	aliasInfo := dropUnusedAliasesInfo(fixtures)
+	fmt.Printf("%s\n", aliasInfo)
 	//processAliases(fixtures)
 }
 
