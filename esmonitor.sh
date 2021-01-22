@@ -15,6 +15,7 @@ if [ -z "$MONITOR_DIR" ]
 then
   MONITOR_DIR=/root/go/src/github.com/LF-Engineering/dev-analytics-es-monitor
 fi
+cd "$MONITOR_DIR" || exit 5
 if [ -z "${ES_URL}" ]
 then
   export ES_URL="`cat ./ES_URL.${1}.secret`"
@@ -33,7 +34,6 @@ then
   echo "$0: you need to specify RECIPIENTS env variable"
   exit 4
 fi
-cd "$MONITOR_DIR" || exit 5
 git pull || exit 6
 make || exit 7
 repo="`cat repo_access.secret`"

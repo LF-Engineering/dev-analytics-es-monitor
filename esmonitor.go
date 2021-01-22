@@ -395,7 +395,7 @@ func sendStatusEmail(body string) error {
 		)
 		res, err := execCommandWithStdin([]string{"sendmail", recipient}, bytes.NewBuffer([]byte(data)))
 		if err != nil {
-			fatalf("Error sending email to %s: %+v\n%s\n", recipient, err, res)
+			fmt.Printf("Error sending email to %s: %+v\n%s\n", recipient, err, res)
 		}
 	}
 	return nil
