@@ -42,6 +42,9 @@ func processIndexesInfo(fixtures []fixture) (info string) {
 		slug := fixture.Slug
 		slug = strings.Replace(slug, "/", "-", -1)
 		for _, ds := range fixture.DataSources {
+			if ds.Slug == "earned_media" {
+				continue
+			}
 			idxSlug := "sds-" + slug + "-" + ds.FullSlug
 			idxSlug = strings.Replace(idxSlug, "/", "-", -1)
 			if idxSlug == "" || idxSlug == "sds-" {
