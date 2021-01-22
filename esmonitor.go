@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"html"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -21,6 +22,7 @@ var (
 	gRecipients   string
 	gHostname     string
 	noDropPattern = regexp.MustCompile(`^(.+-f-.+|.+-earned_media|.+-slack)$`)
+	gHTML         = "<!DOCTYPE html>\n<html>\n<head>\n  <meta charset=\"utf-8\">\n  <title>%s</title>\n</head>\n<body>\n%s\n</body>\n</html>\n"
 )
 
 type esIndex struct {
@@ -133,7 +135,7 @@ func processIndexesInfo(fixtures []fixture) (info string) {
 	sort.Strings(missing)
 	sort.Strings(extra)
 	if len(missing) > 0 {
-		info += fmt.Sprintf("missing %d indices: %s\n", len(missing), strings.Join(missing, ", "))
+		info += fmt.Sprintf("<b><p style=\"color:red\">missing %d indices:</p></b> <small>%s</small>\n", len(missing), html.EscapeString(strings.Join(missing, ", ")))
 	}
 	newExtra := []string{}
 	for _, idx := range extra {
@@ -147,13 +149,13 @@ func processIndexesInfo(fixtures []fixture) (info string) {
 		if info != "" {
 			info += "\n"
 		}
-		info += fmt.Sprintf("following %d indices should be removed: %s\n", len(extra), strings.Join(extra, ", "))
+		info += fmt.Sprintf("<b><p style=\"color:blue\">following %d indices should be removed:</p></b> <small>%s</small>\n", len(extra), html.EscapeString(strings.Join(extra, ", ")))
 	}
 	if len(renames) > 0 {
 		if info != "" {
 			info += "\n"
 		}
-		info += fmt.Sprintf("%d indices should be renamed: %s\n\n", len(renames), strings.Join(renames, ", "))
+		info += fmt.Sprintf("<b><p style=\"color:blue\">%d indices should be renamed:</p></b> <small>%s</small>\n\n", len(renames), html.EscapeString(strings.Join(renames, ", ")))
 	}
 	return
 }
@@ -226,7 +228,7 @@ func dropUnusedAliasesInfo(fixtures []fixture) (info string) {
 	sort.Strings(missing)
 	sort.Strings(extra)
 	if len(missing) > 0 {
-		info += fmt.Sprintf("missing %d aliases: %s\n", len(missing), strings.Join(missing, ", "))
+		info += fmt.Sprintf("<b><p style=\"color:red\">missing %d aliases:</p></b> <small>%s</small>\n", len(missing), html.EscapeString(strings.Join(missing, ", ")))
 	}
 	newExtra := []string{}
 	for _, idx := range extra {
@@ -240,7 +242,7 @@ func dropUnusedAliasesInfo(fixtures []fixture) (info string) {
 		if info != "" {
 			info += "\n"
 		}
-		info += fmt.Sprintf("%d aliases to delete: %s\n", len(extra), strings.Join(extra, ", "))
+		info += fmt.Sprintf("<b><p style=\"color:blue\">%d aliases to delete:</p></b> <small>%s</small>\n", len(extra), html.EscapeString(strings.Join(extra, ", ")))
 	}
 	return
 }
@@ -343,25 +345,44 @@ func processFixtureFiles(fixtureFiles []string) string {
 	aliasInfo := dropUnusedAliasesInfo(fixtures)
 	finalInfo := ""
 	if idxInfo != "" {
-		finalInfo = "Indices status (" + gBranch + " environment):\n==================================\n" + idxInfo
-		finalInfo += "==================================\n"
+		finalInfo = "<b>Indices status (" + gBranch + " environment):\n==================================</b>\n" + idxInfo
+		finalInfo += "<b>==================================</b>\n"
 	}
 	if aliasInfo != "" {
 		if finalInfo != "" {
 			finalInfo += "\n\n"
 		}
-		finalInfo += "Aliases status (" + gBranch + " environment):\n==================================\n" + aliasInfo
-		finalInfo += "==================================\n"
+		finalInfo += "<b>Aliases status (" + gBranch + " environment):\n==================================</b>\n" + aliasInfo
+		finalInfo += "<b>==================================</b>\n"
 	}
 	return finalInfo
 }
 
 func sendStatusEmail(body string) error {
-	fmt.Printf("sending email to %s\n", gRecipients)
-	data := fmt.Sprintf("From: ES-monitor@%s\nTo: %s\nSubject: ES %s monitor status\n\n%s\n", gHostname, gRecipients, gBranch, body)
-	res, err := execCommandWithStdin([]string{"sendmail", gRecipients}, bytes.NewBuffer([]byte(data)))
-	if err != nil {
-		fatalf("Error finding fixtures: %+v\n%s\n", err, res)
+	fmt.Printf("sending email(s) to %s\n", gRecipients)
+	title := "ES " + gBranch + " monitor status"
+	htmlBody := fmt.Sprintf(gHTML, title, strings.Replace(body, "\n", "<br/>\n", -1))
+	ary := strings.Split(gRecipients, ",")
+	for _, recipient := range ary {
+		recipient = strings.TrimSpace(recipient)
+		fmt.Printf("sending email to %s\n", recipient)
+		data := fmt.Sprintf(
+			"From: ES-monitor@%s\n"+
+				"To: %s\n"+
+				"Subject: %s\n"+
+				"Content-Type: text/html\n"+
+				"MIME-Version: 1.0\n"+
+				"\n"+
+				"%s\n",
+			gHostname,
+			recipient,
+			title,
+			htmlBody,
+		)
+		res, err := execCommandWithStdin([]string{"sendmail", recipient}, bytes.NewBuffer([]byte(data)))
+		if err != nil {
+			fatalf("Error sending email to %s: %+v\n%s\n", recipient, err, res)
+		}
 	}
 	return nil
 }
