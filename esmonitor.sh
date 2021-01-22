@@ -43,13 +43,13 @@ then
   exit 8
 fi
 rm -rf dev-analytics-api
+function cleanup {
+  rm -rf "${lock_file}" dev-analytics-api
+}
 git clone "${repo}" || exit 9
 cd dev-analytics-api || exit 10
 git checkout "$1" || exit 11
 cd .. || exit 12
-function cleanup {
-  rm -rf "${lock_file}" dev-analytics-api
-}
 > "${lock_file}"
 trap cleanup EXIT
 BRANCH="$1" ./esmonitor ./dev-analytics-api/app/services/lf/bootstrap/fixtures 2>&1 | tee -a run.log
