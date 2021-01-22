@@ -1,5 +1,5 @@
-GO_BIN_FILES=esmonitor.go
-GO_BIN_CMDS=esmonitor
+GO_BIN_FILES=esmonitor.go fixture.go exec.go error.go
+GO_BIN_CMD=esmonitor
 # race
 # GO_ENV=CGO_ENABLED=1
 # GO_BUILD=go build -ldflags '-s -w' -race
@@ -19,8 +19,8 @@ STRIP=strip
 
 all: check ${BINARIES}
 
-esmonitor: esmonitor.go
-	 ${GO_ENV} ${GO_BUILD} -o esmonitor esmonitor.go
+esmonitor: ${GO_BIN_FILES}
+	 ${GO_ENV} ${GO_BUILD} -o ${GO_BIN_CMD} ${GO_BIN_FILES}
 
 fmt: ${GO_BIN_FILES}
 	./for_each_go_file.sh "${GO_FMT}"
@@ -29,7 +29,7 @@ lint: ${GO_BIN_FILES}
 	./for_each_go_file.sh "${GO_LINT}"
 
 vet: ${GO_BIN_FILES}
-	./for_each_go_file.sh "${GO_VET}"
+	${GO_VET} ${GO_BIN_FILES}
 
 imports: ${GO_BIN_FILES}
 	./for_each_go_file.sh "${GO_IMPORTS}"
@@ -43,7 +43,7 @@ errcheck: ${GO_BIN_FILES}
 check: fmt lint imports vet usedexports errcheck
 
 install: check ${BINARIES}
-	${GO_INSTALL} ${GO_BIN_CMDS}
+	${GO_INSTALL} ${GO_BIN_CMD}
 
 strip: ${BINARIES}
 	${STRIP} ${BINARIES}
