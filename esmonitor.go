@@ -165,9 +165,15 @@ func dropUnusedAliasesInfo(fixtures []fixture) (info string) {
 	for _, fixture := range fixtures {
 		for _, alias := range fixture.Aliases {
 			for _, to := range alias.To {
+				if strings.HasSuffix(to, "-raw") {
+					continue
+				}
 				should[strings.Replace(to, "/", "-", -1)] = struct{}{}
 			}
 			for _, view := range alias.Views {
+				if strings.HasSuffix(view.Name, "-raw") {
+					continue
+				}
 				should[strings.Replace(view.Name, "/", "-", -1)] = struct{}{}
 			}
 		}
@@ -206,7 +212,7 @@ func dropUnusedAliasesInfo(fixtures []fixture) (info string) {
 	got := make(map[string]struct{})
 	for _, alias := range aliases {
 		sAlias := alias.Alias
-		if !strings.HasPrefix(sAlias, "sds-") {
+		if !strings.HasPrefix(sAlias, "sds-") || strings.HasSuffix(sAlias, "-raw") {
 			continue
 		}
 		got[sAlias] = struct{}{}
