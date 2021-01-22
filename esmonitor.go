@@ -424,4 +424,5 @@ func main() {
 		//fmt.Printf("%s\n", info)
 		fatalOnError(sendStatusEmail(info))
 	}
+	fmt.Printf("finished\n")
 }
