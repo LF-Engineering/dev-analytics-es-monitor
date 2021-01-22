@@ -57,7 +57,7 @@ func processIndexesInfo(fixtures []fixture) (info string) {
 		}
 		for _, alias := range fixture.Aliases {
 			idxSlug := alias.From
-			if strings.HasPrefix(alias.From, "pattern:") || strings.HasPrefix(alias.From, "bitergia-") {
+			if strings.HasPrefix(alias.From, "pattern:") || strings.HasPrefix(alias.From, "bitergia-") || strings.HasSuffix(alias.From, "-raw") {
 				continue
 			}
 			if idxSlug == "" || idxSlug == "sds-" {
@@ -136,6 +136,7 @@ func processIndexesInfo(fixtures []fixture) (info string) {
 	sort.Strings(extra)
 	if len(missing) > 0 {
 		info += fmt.Sprintf("<b><p style=\"color:red\">missing %d indices:</p></b> <small>%s</small>\n", len(missing), html.EscapeString(strings.Join(missing, ", ")))
+		fmt.Printf("missing %d indices: %s\n", len(missing), strings.Join(missing, ", "))
 	}
 	newExtra := []string{}
 	for _, idx := range extra {
@@ -150,12 +151,14 @@ func processIndexesInfo(fixtures []fixture) (info string) {
 			info += "\n"
 		}
 		info += fmt.Sprintf("<b><p style=\"color:blue\">following %d indices should be removed:</p></b> <small>%s</small>\n", len(extra), html.EscapeString(strings.Join(extra, ", ")))
+		fmt.Printf("following %d indices should be removed: %s\n", len(extra), strings.Join(extra, ", "))
 	}
 	if len(renames) > 0 {
 		if info != "" {
 			info += "\n"
 		}
 		info += fmt.Sprintf("<b><p style=\"color:blue\">%d indices should be renamed:</p></b> <small>%s</small>\n\n", len(renames), html.EscapeString(strings.Join(renames, ", ")))
+		fmt.Printf("%d indices should be renamed: %s\n", len(renames), strings.Join(renames, ", "))
 	}
 	return
 }
@@ -235,6 +238,7 @@ func dropUnusedAliasesInfo(fixtures []fixture) (info string) {
 	sort.Strings(extra)
 	if len(missing) > 0 {
 		info += fmt.Sprintf("<b><p style=\"color:red\">missing %d aliases:</p></b> <small>%s</small>\n", len(missing), html.EscapeString(strings.Join(missing, ", ")))
+		fmt.Printf("missing %d aliases: %s\n", len(missing), strings.Join(missing, ", "))
 	}
 	newExtra := []string{}
 	for _, idx := range extra {
@@ -249,6 +253,7 @@ func dropUnusedAliasesInfo(fixtures []fixture) (info string) {
 			info += "\n"
 		}
 		info += fmt.Sprintf("<b><p style=\"color:blue\">%d aliases to delete:</p></b> <small>%s</small>\n", len(extra), html.EscapeString(strings.Join(extra, ", ")))
+		fmt.Printf("%d aliases to delete: %s\n", len(extra), strings.Join(extra, ", "))
 	}
 	return
 }
@@ -371,7 +376,7 @@ func sendStatusEmail(body string) error {
 	ary := strings.Split(gRecipients, ",")
 	for _, recipient := range ary {
 		recipient = strings.TrimSpace(recipient)
-		fmt.Printf("sending email to %s\n", recipient)
+		//fmt.Printf("sending email to %s\n", recipient)
 		data := fmt.Sprintf(
 			"From: ES-monitor@%s\n"+
 				"To: %s\n"+
@@ -413,7 +418,7 @@ func main() {
 	fixtures := getFixtures(os.Args[1])
 	info := processFixtureFiles(fixtures)
 	if info != "" {
-		fmt.Printf("%s\n", info)
+		//fmt.Printf("%s\n", info)
 		fatalOnError(sendStatusEmail(info))
 	}
 }
