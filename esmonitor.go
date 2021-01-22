@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -18,6 +19,7 @@ var (
 	gESURL        string
 	gBranch       string
 	gRecipients   string
+	gHostname     string
 	noDropPattern = regexp.MustCompile(`^(.+-f-.+|.+-earned_media|.+-slack)$`)
 )
 
@@ -356,6 +358,11 @@ func processFixtureFiles(fixtureFiles []string) string {
 
 func sendStatusEmail(body string) error {
 	fmt.Printf("sending email to %s\n", gRecipients)
+	data := fmt.Sprintf("From: ES-monitor@%s\nTo: %s\nSubject: ES %s monitor status\n\n%s\n", gHostname, gRecipients, gBranch, body)
+	res, err := execCommandWithStdin([]string{"sendmail", gRecipients}, bytes.NewBuffer([]byte(data)))
+	if err != nil {
+		fatalf("Error finding fixtures: %+v\n%s\n", err, res)
+	}
 	return nil
 }
 
@@ -375,6 +382,7 @@ func main() {
 	if gRecipients == "" {
 		fatalf("%s: you must set RECIPIENTS env variable\n", os.Args[0])
 	}
+	gHostname, _ = os.Hostname()
 	fixtures := getFixtures(os.Args[1])
 	info := processFixtureFiles(fixtures)
 	if info != "" {
