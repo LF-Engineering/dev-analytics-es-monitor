@@ -13,7 +13,7 @@ then
 fi
 if [ -z "$MONITOR_DIR" ]
 then
-  MONITOR_DIR=/root/go/src/github.com/LF-Engineering/dev-analytics-es-monitor
+  MONITOR_DIR="/root/dev/go/src/github.com/LF-Engineering/dev-analytics-es-monitor"
 fi
 cd "$MONITOR_DIR" || exit 5
 if [ -z "${ES_URL}" ]
