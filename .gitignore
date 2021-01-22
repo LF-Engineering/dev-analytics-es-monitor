@@ -16,6 +16,7 @@
 
 # LG
 /esmonitor
+/out
 *.secret
 *.swp
 *.log

@@ -33,6 +33,9 @@ func processIndexes(fixtures []fixture) (info string) {
 		for _, ds := range fixture.DataSources {
 			idxSlug := "sds-" + slug + "-" + ds.FullSlug
 			idxSlug = strings.Replace(idxSlug, "/", "-", -1)
+			if idxSlug == "" || idxSlug == "sds-" {
+				continue
+			}
 			should[idxSlug] = struct{}{}
 			if ds.Slug != ds.FullSlug {
 				idx := "sds-" + slug + "-" + ds.Slug
@@ -44,6 +47,9 @@ func processIndexes(fixtures []fixture) (info string) {
 		for _, alias := range fixture.Aliases {
 			idxSlug := alias.From
 			if strings.HasPrefix(alias.From, "pattern:") || strings.HasPrefix(alias.From, "bitergia-") {
+				continue
+			}
+			if idxSlug == "" || idxSlug == "sds-" {
 				continue
 			}
 			should[idxSlug] = struct{}{}
@@ -83,7 +89,7 @@ func processIndexes(fixtures []fixture) (info string) {
 	got := make(map[string]struct{})
 	for _, index := range indices {
 		sIndex := index.Index
-		if !strings.HasPrefix(sIndex, "sds-") {
+		if !strings.HasPrefix(sIndex, "sds-") || strings.HasSuffix(sIndex, "-raw") {
 			continue
 		}
 		got[sIndex] = struct{}{}
@@ -103,6 +109,7 @@ func processIndexes(fixtures []fixture) (info string) {
 			}
 		}
 	}
+	renames := []string{}
 	for index := range got {
 		_, ok := should[index]
 		if !ok {
@@ -110,14 +117,17 @@ func processIndexes(fixtures []fixture) (info string) {
 			if !ok {
 				extra = append(extra, index)
 			} else {
-				info += fmt.Sprintf("index %s should be renamed to %s\n", index, fullIndex)
+				renames = append(renames, index+" -> "+fullIndex)
 			}
 		}
+	}
+	if len(renames) > 0 {
+		info += fmt.Sprintf("%d indices should be renamed: %s\n\n", len(renames), strings.Join(renames, ", "))
 	}
 	sort.Strings(missing)
 	sort.Strings(extra)
 	if len(missing) > 0 {
-		info += fmt.Sprintf("Missing %d indices:\n%s\n", len(missing), strings.Join(missing, "\n"))
+		info += fmt.Sprintf("missing %d indices: %s\n", len(missing), strings.Join(missing, ", "))
 	}
 	newExtra := []string{}
 	for _, idx := range extra {
@@ -128,7 +138,7 @@ func processIndexes(fixtures []fixture) (info string) {
 	}
 	extra = newExtra
 	if len(extra) > 0 {
-		info += fmt.Sprintf("Following %d indices should be removed:\n%s\n", len(extra), strings.Join(extra, "\n"))
+		info += fmt.Sprintf("following %d indices should be removed: %s\n", len(extra), strings.Join(extra, ", "))
 	}
 	return
 }
@@ -162,6 +172,9 @@ func processFixtureFile(ch chan fixture, fixtureFile string) (fx fixture) {
 		}
 		if !strings.HasPrefix(alias.From, "pattern:") {
 			idxSlug = strings.Replace(idxSlug, "/", "-", -1)
+		}
+		if idxSlug == "" || idxSlug == "sds-" {
+			continue
 		}
 		fx.Aliases[ai].From = idxSlug
 		for ti, to := range alias.To {
@@ -224,7 +237,8 @@ func processFixtureFiles(fixtureFiles []string) {
 		}
 		st[slug] = fixture
 	}
-	processIndexes(fixtures)
+	idxInfo := processIndexes(fixtures)
+	fmt.Printf("%s\n", idxInfo)
 	//dropUnusedAliases(fixtures)
 	//processAliases(fixtures)
 }
