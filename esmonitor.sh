@@ -11,7 +11,11 @@ then
   echo "$0: another esmonitor instance \"$1\" is still running, exiting"
   exit 2
 fi
-cd /root/go/src/github.com/LF-Engineering/dev-analytics-es-monitor || exit 3
+if [ -z "$MONITOR_DIR" ]
+then
+  MONITOR_DIR=/root/go/src/github.com/LF-Engineering/dev-analytics-es-monitor
+fi
+cd "$MONITOR_DIR" || exit 3
 git pull || exit 4
 make || exit 5
 repo="`cat repo_access.secret`"
