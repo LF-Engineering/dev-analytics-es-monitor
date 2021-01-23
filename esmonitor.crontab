@@ -1,2 +1,6 @@
+# CNCF teststats
 0 0,8,16 * * * GOPATH=/home/justa/dev/go GOROOT=/usr/local/go PATH=$PATH:/usr/sbin:/home/justa/dev/go/bin/:/usr/local/go/bin /usr/local/bin/esmonitor.sh prod 1>>/tmp/es_monitor_prod.log 2>>/tmp/es_monitor_prod.err
 0 4,12,20 * * * GOPATH=/home/justa/dev/go GOROOT=/usr/local/go PATH=$PATH:/usr/sbin:/home/justa/dev/go/bin/:/usr/local/go/bin /usr/local/bin/esmonitor.sh test 1>>/tmp/es_monitor_test.log 2>>/tmp/es_monitor_test.err
+# CNCF devstats.cncf.io K8s node-0
+0 0,8,16 * * * MONITOR_DIR=/root/go/src/github.com/LF-Engineering/dev-analytics-es-monitor GOPATH=/root/go GOROOT=/usr/local/go PATH=$PATH:/usr/sbin:/root/go/bin/:/usr/local/go/bin /usr/local/bin/esmonitor.sh prod 1>>/tmp/es_monitor_prod.log 2>>/tmp/es_monitor_prod.err
+0 4,12,20 * * * MONITOR_DIR=/root/go/src/github.com/LF-Engineering/dev-analytics-es-monitor GOPATH=/root/go GOROOT=/usr/local/go PATH=$PATH:/usr/sbin:/root/go/bin/:/usr/local/go/bin /usr/local/bin/esmonitor.sh test 1>>/tmp/es_monitor_test.log 2>>/tmp/es_monitor_test.err
