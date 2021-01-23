@@ -29,7 +29,7 @@ lint: ${GO_BIN_FILES}
 	./for_each_go_file.sh "${GO_LINT}"
 
 vet: ${GO_BIN_FILES}
-	${GO_VET} ${GO_BIN_FILES}
+	${GO_ENV} ${GO_VET} ${GO_BIN_FILES}
 
 imports: ${GO_BIN_FILES}
 	./for_each_go_file.sh "${GO_IMPORTS}"
