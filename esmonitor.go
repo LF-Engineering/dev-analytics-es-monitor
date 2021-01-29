@@ -122,6 +122,7 @@ func processIndexesInfo(fixtures []fixture) (info string) {
 	missing := []string{}
 	extra := []string{}
 	rename := make(map[string]string)
+	emptyNeeded := make(map[string]struct{})
 	for fullIndex := range should {
 		_, ok := got[fullIndex]
 		if !ok {
@@ -129,9 +130,18 @@ func processIndexesInfo(fixtures []fixture) (info string) {
 			_, ok := got[index]
 			if ok {
 				rename[index] = fullIndex
+				_, okE := empty[index]
+				if okE {
+					emptyNeeded[index] = struct{}{}
+				}
 			} else {
 				missing = append(missing, fullIndex)
 			}
+			continue
+		}
+		_, okE := empty[fullIndex]
+		if okE {
+			emptyNeeded[fullIndex] = struct{}{}
 		}
 	}
 	renames := []string{}
@@ -152,9 +162,9 @@ func processIndexesInfo(fixtures []fixture) (info string) {
 		info += fmt.Sprintf("<b><p style=\"color:red\">missing %d indices:</p></b> <small>%s</small>\n", len(missing), html.EscapeString(strings.Join(missing, ", ")))
 		fmt.Printf("missing %d indices: %s\n", len(missing), strings.Join(missing, ", "))
 	}
-	if len(empty) > 0 {
+	if len(emptyNeeded) > 0 {
 		aEmpty := []string{}
-		for idx := range empty {
+		for idx := range emptyNeeded {
 			aEmpty = append(aEmpty, idx)
 		}
 		sort.Strings(aEmpty)
