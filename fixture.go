@@ -19,9 +19,11 @@ type fixture struct {
 }
 
 type dataSource struct {
-	Slug        string `yaml:"slug"`
-	IndexSuffix string `yaml:"index_suffix"`
-	FullSlug    string `yaml:"-"`
+	Slug        string     `yaml:"slug"`
+	Projects    []struct{} `yaml:"projects"`
+	Endpoints   []struct{} `yaml:"endpoints"`
+	IndexSuffix string     `yaml:"index_suffix"`
+	FullSlug    string     `yaml:"-"`
 }
 
 type aliasView struct {

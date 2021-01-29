@@ -45,6 +45,10 @@ func processIndexesInfo(fixtures []fixture) (info string) {
 			if ds.Slug == "earned_media" {
 				continue
 			}
+			// Skip configured but empty data sources
+			if len(ds.Endpoints) == 0 && len(ds.Projects) == 0 {
+				continue
+			}
 			idxSlug := "sds-" + slug + "-" + ds.FullSlug
 			idxSlug = strings.Replace(idxSlug, "/", "-", -1)
 			if idxSlug == "" || idxSlug == "sds-" {
