@@ -10,6 +10,7 @@ import (
 	"regexp"
 	"runtime"
 	"sort"
+	"strconv"
 	"strings"
 
 	jsoniter "github.com/json-iterator/go"
@@ -27,6 +28,7 @@ var (
 
 type esIndex struct {
 	Index string `json:"index"`
+	Count string `json:"docs.count"`
 }
 
 type esAlias struct {
@@ -105,12 +107,17 @@ func processIndexesInfo(fixtures []fixture) (info string) {
 		return
 	}
 	got := make(map[string]struct{})
+	empty := make(map[string]struct{})
 	for _, index := range indices {
 		sIndex := index.Index
 		if !strings.HasPrefix(sIndex, "sds-") || strings.HasSuffix(sIndex, "-raw") {
 			continue
 		}
 		got[sIndex] = struct{}{}
+		iCount, _ := strconv.Atoi(index.Count)
+		if iCount == 0 {
+			empty[sIndex] = struct{}{}
+		}
 	}
 	missing := []string{}
 	extra := []string{}
@@ -144,6 +151,15 @@ func processIndexesInfo(fixtures []fixture) (info string) {
 	if len(missing) > 0 {
 		info += fmt.Sprintf("<b><p style=\"color:red\">missing %d indices:</p></b> <small>%s</small>\n", len(missing), html.EscapeString(strings.Join(missing, ", ")))
 		fmt.Printf("missing %d indices: %s\n", len(missing), strings.Join(missing, ", "))
+	}
+	if len(empty) > 0 {
+		aEmpty := []string{}
+		for idx := range empty {
+			aEmpty = append(aEmpty, idx)
+		}
+		sort.Strings(aEmpty)
+		info += fmt.Sprintf("<b><p style=\"color:orange\">%d empty indices:</p></b> <small>%s</small>\n", len(aEmpty), html.EscapeString(strings.Join(aEmpty, ", ")))
+		fmt.Printf("%d empty indices: %s\n", len(aEmpty), strings.Join(aEmpty, ", "))
 	}
 	newExtra := []string{}
 	for _, idx := range extra {
