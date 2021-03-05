@@ -18,12 +18,13 @@ import (
 )
 
 var (
-	gESURL        string
-	gBranch       string
-	gRecipients   string
-	gHostname     string
-	noDropPattern = regexp.MustCompile(`^(.+-f-.+|.+-earned_media|.+-slack)$`)
-	gHTML         = "<!DOCTYPE html>\n<html>\n<head>\n  <meta charset=\"utf-8\">\n  <title>%s</title>\n</head>\n<body>\n%s\n</body>\n</html>\n"
+	gESURL            string
+	gBranch           string
+	gRecipients       string
+	gHostname         string
+	noDropPattern     = regexp.MustCompile(`^(.+-f-.+|.+-earned_media|.+-dads-.+|.+-slack|da-ds-gha-.+|.+-social_media|.+-last-action-date-cache)$`)
+	notMissingPattern = regexp.MustCompile(`^(.+-github-pull_request.*|.+-github-issue-raw.*|.+-github-repository-raw.*)$`)
+	gHTML             = "<!DOCTYPE html>\n<html>\n<head>\n  <meta charset=\"utf-8\">\n  <title>%s</title>\n</head>\n<body>\n%s\n</body>\n</html>\n"
 )
 
 type esIndex struct {
@@ -135,7 +136,9 @@ func processIndexesInfo(fixtures []fixture) (info string) {
 					emptyNeeded[index] = struct{}{}
 				}
 			} else {
-				missing = append(missing, fullIndex)
+				if !notMissingPattern.MatchString(fullIndex) {
+					missing = append(missing, fullIndex)
+				}
 			}
 			continue
 		}
@@ -258,7 +261,9 @@ func dropUnusedAliasesInfo(fixtures []fixture) (info string) {
 	for alias := range should {
 		_, ok := got[alias]
 		if !ok {
-			missing = append(missing, alias)
+			if !notMissingPattern.MatchString(alias) {
+				missing = append(missing, alias)
+			}
 		}
 	}
 	for alias := range got {
