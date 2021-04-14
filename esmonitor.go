@@ -22,7 +22,7 @@ var (
 	gBranch           string
 	gRecipients       string
 	gHostname         string
-	noDropPattern     = regexp.MustCompile(`^(.+-f-.+|.+-earned_media|.+-dads-.+|.+-slack|.+-da-ds-gha-.+|.+-social_media|.+-last-action-date-cache)$`)
+	noDropPattern     = regexp.MustCompile(`^(.+-f-.+|.+-earned_media|.+-dads-.+|.+-slack|.+-da-ds-gha-.+|.+-social_media|.+-last-action-date-cache|.+-flat-.+|.+-flat)$`)
 	notMissingPattern = regexp.MustCompile(`^(.+-github-pull_request.*|.+-github-issue-raw.*|.+-github-repository-raw.*)$`)
 	gHTML             = "<!DOCTYPE html>\n<html>\n<head>\n  <meta charset=\"utf-8\">\n  <title>%s</title>\n</head>\n<body>\n%s\n</body>\n</html>\n"
 )
